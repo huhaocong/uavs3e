@@ -1589,5 +1589,7 @@ void uavs3e_load_default_cfg(enc_cfg_t *cfg)
     //#======= other encoder-size tools ================
     cfg->chroma_dqp   = 1;
     cfg->adaptive_dqp = 0;
-
+	cfg->use_ref_block_aq = 0;
+	cfg->use_ref_block_aq_alpha = 50;
+	cfg->use_ref_block_aq_beta = 50;
 }
