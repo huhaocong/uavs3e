@@ -785,9 +785,34 @@ void *enc_lcu_row(core_t *core, enc_lcu_row_t *row)
                 } else {
                     lcu_qp = core->pathdr->slice_qp;
                 }
-            } else {
-                com_assert(0);
             }
+
+            //for testing delta QP
+			if (core->param->use_ref_block_aq) {
+				double delata_qp = 0;
+				double qp = core->pathdr->slice_qp;
+				int pre_ref_block_stride = ((core->info->pic_width + UNIT_SIZE - 1) / UNIT_SIZE);
+				int idx0_x = core->cu_pix_x / UNIT_SIZE;
+				int idx0_y = core->cu_pix_y / UNIT_SIZE;
+				int x, y;
+				int count = 0;
+				for (y = 0; y < core->cu_height / UNIT_SIZE; y++) {
+					for (x = 0; x < core->cu_width / UNIT_SIZE; x++) {
+						double intra_cost = core->pic_org->img->intra_satd[(y + idx0_y) * pre_ref_block_stride + x + idx0_x] + 1;
+						double propagateCost = core->pic_org->img->propagateCost[(y + idx0_y) * pre_ref_block_stride + x + idx0_x];
+
+						delata_qp += core->param->use_ref_block_aq_alpha/100.0 * COM_LOG2(core->param->use_ref_block_aq_beta/100.0 + propagateCost / intra_cost);
+						count++;
+					}
+				}
+				if (count) {
+					delata_qp /= count;
+				}
+				
+				lcu_qp = (int)(core->pathdr->slice_qp + delata_qp);
+				lcu_qp = COM_CLIP3(0, (MAX_QUANT_BASE + info->qp_offset_bit_depth), lcu_qp);
+				last_lcu_qp = lcu_qp;
+			}
         }
         *map_qp++ = (u8)lcu_qp;
 
